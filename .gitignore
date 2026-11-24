@@ -16,3 +16,4 @@ node_modules/
 
 # Ferramentas locais (nao faz parte da entrega)
 .claude/
+docs/~$*.docx

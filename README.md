@@ -47,3 +47,21 @@ Sem precisar de conta: abra **https://www.hivemq.com/demos/websocket-client/**, 
 {"id":"teste1","cmd":"silenciar","min":5,"nonce":1}
 ```
 (o `nonce` precisa ser maior a cada novo comando — use um número crescente ou o timestamp atual). A resposta chega em `.../ack`.
+
+### Deixar o painel com dados dinâmicos (sem depender do HTTPS do Wokwi)
+Como o Wokwi não alcança o Worker por HTTPS (ver acima), o `worker/tools/mqtt-bridge.mjs` assina o mesmo MQTT público e escreve `painel/dados.json` (servido estático pelo Worker) com dados reais, publicando (`wrangler deploy`) sozinho a cada minuto.
+
+**Passo a passo:**
+1. Simule o firmware (VS Code + extensão Wokwi, ou `wokwi-cli .` no terminal, dentro de `firmware/`) e confirme no Serial Monitor: `Geladeira de vacinas: regra local ativa` → `[rede] conectando ao Wi-Fi...` → `[rede] MQTT conectado (TLS)`.
+2. Em outro terminal:
+   ```bash
+   cd worker
+   npm install          # só na primeira vez (instala a lib mqtt)
+   node tools/mqtt-bridge.mjs
+   ```
+   Deve aparecer `[ponte] conectado ao broker MQTT` e, a cada 60 s, `[ponte] dados.json atualizado...` seguido de `[ponte] dados.json publicado no painel (wrangler deploy OK)`.
+3. Abra **https://vacinas-worker.vacinas-n2.workers.dev** no navegador. Em poucos segundos:
+   - o indicador de conexão mostra **"ESP32 online"** (via MQTT direto);
+   - o gráfico "Últimas 6 horas" e a tabela "Resumo por hora" vão ganhando pontos novos a cada minuto (via `dados.json`, atualizado pela ponte).
+4. Teste o comando: clique **"Silenciar buzzer 10 min"** no painel — deve responder **"executado"** em poucos segundos (não "sem resposta"). Se aparecer "sem resposta" repetidamente, é porque o envio HTTPS do firmware (`enviaBuffer()`) está travando a tarefa de rede por ~30 s dentro do Wokwi; para testar o comando de forma estável, comente essa chamada em `firmware/src/main.cpp` (dentro de `tarefaRede()`, procure por `enviaBuffer();`), recompile (`pio run`) e reinicie a simulação — **não comite essa alteração**, é só um ajuste local para contornar a limitação do simulador.
+5. Pra parar: `Ctrl+C` no terminal da ponte.

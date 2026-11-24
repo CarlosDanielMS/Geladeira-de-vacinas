@@ -253,6 +253,7 @@ void tarefaRede(void*) {
   mqtt.setCallback(aoReceber);
   mqtt.setBufferSize(512);
   mqtt.setSocketTimeout(4);
+  mqtt.setKeepAlive(60);      // tolera o envio HTTPS travar por um tempo sem o broker derrubar a conexao
   WiFi.mode(WIFI_STA);
   WiFi.setAutoReconnect(true);
   uint32_t tWifi = 0, tMqtt = 0, tTel = 0, tEst = 0, tEnvio = 0;

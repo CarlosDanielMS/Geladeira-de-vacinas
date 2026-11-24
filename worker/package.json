@@ -10,5 +10,8 @@
   },
   "devDependencies": {
     "wrangler": "^4"
+  },
+  "dependencies": {
+    "mqtt": "^5.16.1"
   }
 }

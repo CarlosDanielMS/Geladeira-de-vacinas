@@ -67,17 +67,13 @@ if (CFG && window.mqtt) {
   pill($("conexao"), "sem MQTT (falta config.js): só histórico", "amb");
 }
 
-// ---------- historico (Worker) ----------
+// ---------- historico (arquivo estatico dados.json, atualizado pela ponte MQTT local) ----------
 async function carregaHistorico() {
-  const disp = (CFG && CFG.dispositivo) || "geladeira1";
   try {
-    const [rl, rr, ru] = await Promise.all([
-      fetch("/api/leituras?dispositivo=" + disp + "&horas=6").then((r) => r.json()),
-      fetch("/api/resumo?dispositivo=" + disp + "&horas=24").then((r) => r.json()),
-      fetch("/api/ultimo?dispositivo=" + disp).then((r) => r.json()),
-    ]);
-    desenha(rl.leituras || []);
-    tabela(rr.resumo || []);
+    const d = await fetch("/dados.json?t=" + Date.now()).then((r) => r.json());
+    desenha(d.leituras || []);
+    tabela(d.resumo || []);
+    const ru = d.ultimo || {};
     if (!client && ru.ts) mostraEstado({ temp_c: ru.temp_c === null ? undefined : ru.temp_c, estado: ru.estado, porta_aberta: !!ru.porta, online: Date.now() / 1000 - ru.recebido_em < 180 });
   } catch (e) { console.warn("historico indisponivel", e); }
 }

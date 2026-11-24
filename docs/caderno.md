@@ -4,7 +4,7 @@
 | Integrantes (papéis: montagem · código · nuvem e painel · caderno e testes) | Carlos, Vitório |
 | :-- | :-- |
 | **Desafio escolhido** | Geladeira de vacinas (opção A) |
-| **Link do repositório no GitHub** | **A PREENCHER** |
+| **Link do repositório no GitHub** | https://github.com/CarlosDanielMS/Geladeira-de-vacinas |
 
 > Convenção deste caderno: o que **foi executado de verdade** aparece com data/ferramenta; o que depende de conta, hardware ou Wokwi está marcado **A PREENCHER**.
 

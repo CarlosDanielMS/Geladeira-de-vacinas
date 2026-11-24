@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "author": "grupo",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 0, "left": 0, "attrs": {} },
+    { "type": "wokwi-dht22", "id": "dht1", "top": -105, "left": 120, "attrs": { "temperature": "5" } },
+    { "type": "wokwi-hc-sr04", "id": "ultra1", "top": -120, "left": -200, "attrs": { "distance": "8" } },
+    { "type": "wokwi-buzzer", "id": "bz1", "top": 130, "left": 150, "attrs": { "volume": "0.1" } }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "dht1:VCC", "esp:3V3", "red", [ "v0" ] ],
+    [ "dht1:GND", "esp:GND.1", "black", [ "v0" ] ],
+    [ "dht1:SDA", "esp:15", "green", [ "v0" ] ],
+    [ "ultra1:VCC", "esp:5V", "red", [ "v0" ] ],
+    [ "ultra1:GND", "esp:GND.2", "black", [ "v0" ] ],
+    [ "ultra1:TRIG", "esp:5", "blue", [ "v0" ] ],
+    [ "ultra1:ECHO", "esp:18", "orange", [ "v0" ] ],
+    [ "bz1:1", "esp:GND.1", "black", [ "v0" ] ],
+    [ "bz1:2", "esp:4", "purple", [ "v0" ] ]
+  ],
+  "dependencies": {}
+}

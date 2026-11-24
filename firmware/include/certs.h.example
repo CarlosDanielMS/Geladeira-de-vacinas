@@ -1,0 +1,16 @@
+#pragma once
+// Copie para certs.h. Cole a CA RAIZ de cada servidor (NAO use setInsecure()).
+// Descobrir a cadeia:  openssl s_client -showcerts -connect HOST:8883   (ou :443 no Worker)
+// HiveMQ Cloud / Let's Encrypt -> "ISRG Root X1" (https://letsencrypt.org/certs/isrgrootx1.pem)
+static const char CA_MQTT[] PROGMEM = R"EOF_CA(
+-----BEGIN CERTIFICATE-----
+COLE_AQUI_A_CA_RAIZ_DO_BROKER
+-----END CERTIFICATE-----
+)EOF_CA";
+
+// Raiz que assina o certificado de *.workers.dev (confira com openssl; costuma ser uma raiz Google Trust Services ou ISRG)
+static const char CA_WORKER[] PROGMEM = R"EOF_CA(
+-----BEGIN CERTIFICATE-----
+COLE_AQUI_A_CA_RAIZ_DO_WORKER
+-----END CERTIFICATE-----
+)EOF_CA";

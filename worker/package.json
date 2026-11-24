@@ -1,0 +1,14 @@
+{
+  "name": "vacinas-worker",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "wrangler dev --local --persist-to .wrangler/state",
+    "db:local": "wrangler d1 execute vacinas --local --persist-to .wrangler/state --file=schema.sql",
+    "deploy": "wrangler deploy",
+    "test": "node test/smoke.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4"
+  }
+}

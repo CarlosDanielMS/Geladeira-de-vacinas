@@ -1,0 +1,2 @@
+# Copie para .dev.vars (esta no .gitignore) para rodar localmente.
+INGEST_TOKEN=troque-por-um-token-longo-e-aleatorio

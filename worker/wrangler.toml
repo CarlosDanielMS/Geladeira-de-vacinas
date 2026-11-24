@@ -1,0 +1,28 @@
+name = "vacinas-worker"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+# Painel estatico servido pelo proprio Worker; so /api/* passa pelo codigo.
+[assets]
+directory = "../painel"
+binding = "ASSETS"
+run_worker_first = ["/api/*"]
+
+# D1: historico (uma linha por leitura). Crie com: wrangler d1 create vacinas  e cole o database_id.
+[[d1_databases]]
+binding = "DB"
+database_name = "vacinas"
+database_id = "e699d053-6977-4787-a823-65efdff39ac4"
+
+# KV: ultimo estado do dispositivo. Crie com: wrangler kv namespace create ESTADO
+[[kv_namespaces]]
+binding = "ESTADO"
+id = "572c74f4e35c4608a4970a44adcdc296"
+
+# Retencao: limpa leituras antigas todo dia as 03:00 UTC
+[triggers]
+crons = ["0 3 * * *"]
+
+[vars]
+RETENCAO_DIAS = "365"
+# INGEST_TOKEN e segredo: wrangler secret put INGEST_TOKEN  (local: arquivo .dev.vars)

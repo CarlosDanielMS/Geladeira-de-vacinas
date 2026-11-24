@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Geladeira de vacinas</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Geladeira de vacinas <small>faixa 2-8 °C</small></h1>
+  <span id="conexao" class="pill off">offline</span>
+</header>
+
+<div id="alerta" class="alerta" hidden></div>
+
+<main>
+  <section class="card">
+    <div class="rotulo">Temperatura agora</div>
+    <div id="temp" class="valor">--</div>
+    <div id="estado" class="pill">--</div>
+    <ul class="meta">
+      <li>Porta: <b id="porta">--</b></li>
+      <li>Buzzer: <b id="buzzer">--</b></li>
+      <li>Leituras pendentes no ESP32: <b id="pendentes">--</b></li>
+      <li>Atualizado: <b id="quando">--</b></li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <div class="rotulo">Comando</div>
+    <div class="botoes">
+      <button id="btn-silenciar">Silenciar buzzer 10 min</button>
+      <button id="btn-reativar" class="sec">Reativar buzzer</button>
+    </div>
+    <ul id="cmds" class="cmds"></ul>
+    <p class="nota">"Executado" só aparece depois do ack do ESP32. Sem resposta em 10 s = ESP32 offline ou comando recusado.</p>
+  </section>
+
+  <section class="card larga">
+    <div class="rotulo">Últimas 6 horas <span class="nota">(faixa segura em verde)</span></div>
+    <svg id="grafico" viewBox="0 0 600 220" role="img" aria-label="Gráfico de temperatura"></svg>
+  </section>
+
+  <section class="card larga">
+    <div class="rotulo">Resumo por hora (24 h) <span class="nota">GROUP BY hora no D1</span></div>
+    <div class="tabela"><table id="resumo">
+      <thead><tr><th>Hora (UTC)</th><th>Máx °C</th><th>Média °C</th><th>Mín °C</th><th>Leituras</th><th>Fora da faixa</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js"></script>
+<script src="config.js" onerror="window.CONFIG=null"></script>
+<script src="app.js"></script>
+</body>
+</html>

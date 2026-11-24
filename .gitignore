@@ -1,0 +1,18 @@
+# Segredos (nunca versionar)
+firmware/include/secrets.h
+firmware/include/certs.h
+worker/.dev.vars
+worker/.wrangler/
+worker/.ingest_token_generated.txt
+painel/config.js
+*.env
+.env*
+
+# Build / dependencias
+firmware/.pio/
+worker/node_modules/
+node_modules/
+.vscode/
+
+# Ferramentas locais (nao faz parte da entrega)
+.claude/

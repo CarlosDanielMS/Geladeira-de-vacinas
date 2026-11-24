@@ -3,56 +3,216 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#0B6E8A">
 <title>Geladeira de vacinas</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230B6E8A'/%3E%3Crect x='14' y='6' width='4' height='14' rx='2' fill='white'/%3E%3Ccircle cx='16' cy='22' r='4' fill='white'/%3E%3C/svg%3E">
+<link rel="preload" href="fonts/public-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header>
-  <h1>Geladeira de vacinas <small>faixa 2-8 °C</small></h1>
-  <span id="conexao" class="pill off">offline</span>
+<a class="pular" href="#conteudo">Ir para o conteúdo</a>
+
+<header class="topo pagina">
+  <div class="marca">
+    <svg class="marca-icone" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8"/><rect x="14" y="6" width="4" height="14" rx="2"/><circle cx="16" cy="22" r="4"/></svg>
+    <div>
+      <h1>Geladeira de vacinas</h1>
+      <p class="marca-sub">Faixa segura de 2 a 8 °C</p>
+    </div>
+  </div>
+  <p id="conexao" class="status" data-estado="carregando" role="status"><span class="ponto" aria-hidden="true"></span><span id="conexao-txt">Carregando…</span></p>
 </header>
 
-<div id="alerta" class="alerta" hidden></div>
+<nav class="abas pagina" role="tablist" aria-label="Seções do painel">
+  <button role="tab" id="tab-monitor" aria-controls="aba-monitor" data-aba="monitor" aria-selected="true">Monitoramento <span id="mon-badge" class="badge" hidden>Alarme</span></button>
+  <button role="tab" id="tab-vacinas" aria-controls="aba-vacinas" data-aba="vacinas" aria-selected="false" tabindex="-1">Vacinas <span id="vac-badge" class="badge" hidden></span></button>
+</nav>
 
-<main>
-  <section class="card">
-    <div class="rotulo">Temperatura agora</div>
-    <div id="temp" class="valor">--</div>
-    <div id="estado" class="pill">--</div>
-    <ul class="meta">
-      <li>Porta: <b id="porta">--</b></li>
-      <li>Buzzer: <b id="buzzer">--</b></li>
-      <li>Leituras pendentes no ESP32: <b id="pendentes">--</b></li>
-      <li>Atualizado: <b id="quando">--</b></li>
-    </ul>
-  </section>
+<div id="conteudo" class="pagina">
+  <!-- ===================== MONITORAMENTO ===================== -->
+  <main id="aba-monitor" class="aba" role="tabpanel" aria-labelledby="tab-monitor">
 
-  <section class="card">
-    <div class="rotulo">Comando</div>
-    <div class="botoes">
-      <button id="btn-silenciar">Silenciar buzzer 10 min</button>
-      <button id="btn-reativar" class="sec">Reativar buzzer</button>
-    </div>
-    <ul id="cmds" class="cmds"></ul>
-    <p class="nota">"Executado" só aparece depois do ack do ESP32. Sem resposta em 10 s = ESP32 offline ou comando recusado.</p>
-  </section>
+    <section id="situacao" class="situacao" data-nivel="neutro" aria-label="Situação atual da geladeira">
+      <div class="sit-principal">
+        <h2 id="sit-estado" class="sit-estado">Aguardando dados do ESP32</h2>
+        <p class="sit-valor"><span id="temp">--</span><span class="unid">°C</span></p>
+        <div class="faixa" aria-hidden="true">
+          <div class="faixa-trilho"><span id="faixa-marca" class="faixa-marca" hidden></span></div>
+          <div class="faixa-rotulos"><span style="left:0">0</span><span style="left:16.667%">2</span><span style="left:66.667%">8</span><span style="left:100%">12</span></div>
+        </div>
+        <p id="sit-nota" class="sit-nota"></p>
+      </div>
 
-  <section class="card larga">
-    <div class="rotulo">Últimas 6 horas <span class="nota">(faixa segura em verde)</span></div>
-    <svg id="grafico" viewBox="0 0 600 220" role="img" aria-label="Gráfico de temperatura"></svg>
-  </section>
+      <div class="sit-lateral">
+        <dl class="fatos">
+          <div><dt>Umidade</dt><dd id="umid">--</dd></div>
+          <div><dt>Porta</dt><dd id="porta">--</dd></div>
+          <div><dt>Buzzer</dt><dd id="buzzer">--</dd></div>
+          <div><dt>Última leitura</dt><dd id="quando">--</dd></div>
+          <div><dt>Pendentes no ESP32</dt><dd id="pendentes">--</dd></div>
+        </dl>
+        <div class="acoes">
+          <button id="btn-silenciar" class="btn" type="button">Silenciar buzzer por 10 min</button>
+          <button id="btn-reativar" class="btn btn-sec" type="button">Reativar buzzer</button>
+        </div>
+        <p id="cmd-status" class="nota" role="status">Silenciar só fica disponível quando há alarme.</p>
+      </div>
+    </section>
 
-  <section class="card larga">
-    <div class="rotulo">Resumo por hora (24 h) <span class="nota">GROUP BY hora no D1</span></div>
-    <div class="tabela"><table id="resumo">
-      <thead><tr><th>Hora (UTC)</th><th>Máx °C</th><th>Média °C</th><th>Mín °C</th><th>Leituras</th><th>Fora da faixa</th></tr></thead>
-      <tbody></tbody>
-    </table></div>
-  </section>
-</main>
+    <section class="painel" aria-labelledby="t-hist">
+      <div class="painel-topo">
+        <div>
+          <h2 id="t-hist">Histórico de temperatura</h2>
+          <p id="tit-grafico" class="nota">Últimas 6 horas, por minuto</p>
+        </div>
+        <div class="ferramentas">
+          <div class="seg" id="seg-janela" role="group" aria-label="Janela de tempo">
+            <button type="button" data-h="6" aria-pressed="true">6 h</button>
+            <button type="button" data-h="24" aria-pressed="false">24 h</button>
+            <button type="button" data-h="168" aria-pressed="false">7 dias</button>
+            <button type="button" data-h="0" aria-pressed="false">Período</button>
+          </div>
+          <label class="inline">Agrupar por
+            <select id="p-passo">
+              <option value="segundo">Cada leitura</option>
+              <option value="minuto" selected>Minuto</option>
+              <option value="hora">Hora</option>
+            </select>
+          </label>
+          <button id="p-csv" class="btn btn-sec btn-peq" type="button">Exportar CSV</button>
+        </div>
+      </div>
+
+      <div id="p-custom" class="periodo-custom" hidden>
+        <label>De <input type="datetime-local" id="p-de"></label>
+        <label>Até <input type="datetime-local" id="p-ate"></label>
+        <button id="p-aplicar" class="btn btn-peq" type="button">Aplicar período</button>
+      </div>
+      <p id="p-msg" class="nota msg" role="status"></p>
+
+      <div id="grafico-caixa" class="grafico-caixa">
+        <svg id="grafico" role="img" aria-label="Gráfico de temperatura ao longo do tempo"></svg>
+        <div id="grafico-vazio" class="grafico-vazio" hidden></div>
+        <div id="dica" class="dica" hidden></div>
+      </div>
+      <ul class="legenda">
+        <li><span class="leg leg-faixa"></span>Faixa segura de 2 a 8 °C</li>
+        <li><span class="leg leg-linha"></span>Temperatura</li>
+        <li><span class="leg leg-fora"></span>Fora da faixa</li>
+      </ul>
+    </section>
+
+    <section class="painel" aria-labelledby="t-resumo">
+      <div class="painel-topo">
+        <div>
+          <h2 id="t-resumo">Resumo por intervalo</h2>
+          <p id="tit-resumo" class="nota">Mais recentes primeiro</p>
+        </div>
+      </div>
+      <div class="tabela rolagem">
+        <table id="resumo">
+          <thead><tr><th id="th-hora">Minuto</th><th class="num">Máx. (°C)</th><th class="num">Média (°C)</th><th class="num">Mín. (°C)</th><th class="num">Leituras</th><th class="num">Umid. média (%)</th><th class="num">Fora da faixa</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="painel" aria-labelledby="t-eventos">
+      <div class="painel-topo">
+        <div>
+          <h2 id="t-eventos">Eventos</h2>
+          <p class="nota">Alertas, mudanças de estado, comandos e leituras registrados no banco.</p>
+        </div>
+        <div class="ferramentas">
+          <div class="seg" id="seg-eventos" role="group" aria-label="Filtro de eventos">
+            <button type="button" data-f="importantes" aria-pressed="true">Importantes</button>
+            <button type="button" data-f="tudo" aria-pressed="false">Tudo</button>
+          </div>
+          <button id="btn-limpar" class="btn btn-sec btn-peq" type="button" title="Esconde os eventos atuais só nesta tela; o banco continua com tudo">Limpar tela</button>
+        </div>
+      </div>
+      <div class="tabela rolagem">
+        <table id="eventos">
+          <thead><tr><th>Hora</th><th>Tipo</th><th>Detalhe</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===================== VACINAS ===================== -->
+  <main id="aba-vacinas" class="aba" role="tabpanel" aria-labelledby="tab-vacinas" hidden>
+    <div id="vac-alarme" class="alerta" role="alert" hidden></div>
+
+    <section class="painel" id="vac-cadastro" aria-labelledby="t-cad">
+      <div class="painel-topo">
+        <div>
+          <h2 id="t-cad">Cadastrar vacina</h2>
+          <p class="nota">Registre o que está guardado nesta geladeira para saber o que revisar se houver alarme.</p>
+        </div>
+      </div>
+      <form id="vac-form" class="form-grade" autocomplete="off">
+        <label>Nome <input id="vac-nome" required maxlength="80" list="vac-nomes" placeholder="Ex.: Influenza"></label>
+        <label>Lote <input id="vac-lote" required maxlength="40" placeholder="Ex.: AB1234"></label>
+        <label>Validade <input id="vac-validade" type="date" required></label>
+        <label>Tipo <input id="vac-tipo" required maxlength="40" list="vac-tipos" placeholder="Escolha ou digite"></label>
+        <button type="submit" class="btn">Cadastrar</button>
+      </form>
+      <p id="vac-msg" class="nota msg" role="status"></p>
+
+      <div id="vac-chave" class="chave" hidden>
+        <p>Para cadastrar ou remover vacinas, informe a chave do painel. Ela fica salva só neste navegador.</p>
+        <div class="chave-linha">
+          <label>Chave do painel <input id="vac-token" type="password" autocomplete="off"></label>
+          <button id="vac-token-salvar" class="btn" type="button">Salvar chave</button>
+        </div>
+      </div>
+      <p id="vac-nota-chave" class="nota" hidden>Cadastrar e remover exigem a chave do painel. <a href="#" id="vac-trocar-chave">Trocar chave</a></p>
+
+      <datalist id="vac-tipos">
+        <option value="Inativada"><option value="Atenuada (vírus vivo)"><option value="mRNA"><option value="Vetor viral">
+        <option value="Subunidade / recombinante"><option value="Toxoide"><option value="Conjugada"><option value="Soro / imunoglobulina">
+      </datalist>
+      <datalist id="vac-nomes">
+        <option value="BCG"><option value="Hepatite B"><option value="Pentavalente"><option value="Poliomielite (VIP)">
+        <option value="Rotavírus"><option value="Pneumocócica 10-valente"><option value="Meningocócica C"><option value="Febre amarela">
+        <option value="Tríplice viral"><option value="Varicela"><option value="Hepatite A"><option value="DTP"><option value="HPV">
+        <option value="Influenza"><option value="Covid-19"><option value="dT (dupla adulto)">
+      </datalist>
+    </section>
+
+    <section class="estoque" aria-label="Situação do estoque">
+      <p class="est"><b id="vac-total">--</b><span>cadastradas</span></p>
+      <p class="est" id="est-vencidas" data-nivel="ok"><b id="vac-vencidas">--</b><span>vencidas</span></p>
+      <p class="est" id="est-vencendo" data-nivel="ok"><b id="vac-vencendo">--</b><span>vencem em até 30 dias</span></p>
+    </section>
+
+    <section class="painel" aria-labelledby="t-lista">
+      <div class="painel-topo">
+        <div>
+          <h2 id="t-lista">Vacinas na geladeira</h2>
+          <p class="nota">Ordenadas pela validade, da mais próxima para a mais distante.</p>
+        </div>
+        <div class="ferramentas">
+          <label class="inline">Buscar <input id="vac-busca" type="search" placeholder="Nome, lote ou tipo"></label>
+        </div>
+      </div>
+      <div class="tabela">
+        <table id="vac-tabela" class="tab-cartoes">
+          <thead><tr><th>Nome</th><th>Lote</th><th>Tipo</th><th>Validade</th><th>Situação</th><th><span class="sr">Ações</span></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="toasts" class="toasts" aria-live="polite" aria-atomic="false"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js"></script>
 <script src="config.js" onerror="window.CONFIG=null"></script>
 <script src="app.js"></script>
+<script src="vacinas.js"></script>
 </body>
 </html>

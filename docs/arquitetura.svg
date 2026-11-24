@@ -1,0 +1,159 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 900" width="1400" height="900" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="11" markerHeight="11" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#475569"/></marker>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="11" markerHeight="11" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#16a34a"/></marker>
+    <marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="11" markerHeight="11" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#ea580c"/></marker>
+    <filter id="s" x="-5%" y="-5%" width="110%" height="115%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity=".12"/></filter>
+  </defs>
+  <rect width="1400" height="900" fill="#f8fafc"/>
+
+  <text x="700" y="46" text-anchor="middle" font-size="28" font-weight="700" fill="#0f172a">Geladeira de vacinas — arquitetura do sistema</text>
+  <text x="700" y="74" text-anchor="middle" font-size="15" fill="#64748b">ESP32 monitora 2–8 °C · MQTT/TLS · ponte · Cloudflare Worker + D1 + KV · painel web</text>
+
+  <!-- zone labels -->
+  <rect x="30" y="100" width="290" height="560" rx="16" fill="#eff6ff" stroke="#bfdbfe" stroke-dasharray="6 5"/>
+  <text x="50" y="126" font-size="14" font-weight="700" fill="#1d4ed8">DISPOSITIVO (Wokwi / hardware)</text>
+  <rect x="350" y="100" width="300" height="560" rx="16" fill="#f5f3ff" stroke="#ddd6fe" stroke-dasharray="6 5"/>
+  <text x="370" y="126" font-size="14" font-weight="700" fill="#6d28d9">MENSAGERIA + PONTE</text>
+  <rect x="680" y="100" width="410" height="560" rx="16" fill="#fff7ed" stroke="#fed7aa" stroke-dasharray="6 5"/>
+  <text x="700" y="126" font-size="14" font-weight="700" fill="#c2410c">CLOUDFLARE (ou wrangler dev local)</text>
+  <rect x="1120" y="100" width="250" height="560" rx="16" fill="#f0fdf4" stroke="#bbf7d0" stroke-dasharray="6 5"/>
+  <text x="1140" y="126" font-size="14" font-weight="700" fill="#15803d">USUÁRIO</text>
+
+  <!-- sensors -->
+  <g filter="url(#s)">
+    <rect x="55" y="150" width="240" height="64" rx="10" fill="#fff" stroke="#93c5fd"/>
+    <text x="175" y="177" text-anchor="middle" font-size="15" font-weight="700" fill="#0f172a">DHT22</text>
+    <text x="175" y="198" text-anchor="middle" font-size="12.5" fill="#64748b">temperatura · GPIO15</text>
+    <rect x="55" y="232" width="240" height="64" rx="10" fill="#fff" stroke="#93c5fd"/>
+    <text x="175" y="259" text-anchor="middle" font-size="15" font-weight="700" fill="#0f172a">HC-SR04</text>
+    <text x="175" y="280" text-anchor="middle" font-size="12.5" fill="#64748b">distância da porta · GPIO5/18</text>
+  </g>
+  <!-- ESP32 -->
+  <g filter="url(#s)">
+    <rect x="55" y="335" width="240" height="190" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+    <text x="175" y="363" text-anchor="middle" font-size="18" font-weight="700" fill="#1e3a8a">ESP32</text>
+    <text x="175" y="388" text-anchor="middle" font-size="12.5" fill="#1e40af">regra do alarme local:</text>
+    <text x="175" y="408" text-anchor="middle" font-size="12.5" fill="#334155">temp fora de 2–8 °C por 5 min</text>
+    <text x="175" y="427" text-anchor="middle" font-size="12.5" fill="#334155">porta aberta &gt; 3 min</text>
+    <text x="175" y="446" text-anchor="middle" font-size="12.5" fill="#334155">sensor com defeito (3 falhas)</text>
+    <text x="175" y="473" text-anchor="middle" font-size="12.5" fill="#1e40af">buffer offline de 24 h</text>
+    <text x="175" y="493" text-anchor="middle" font-size="12.5" fill="#1e40af">comandos: silenciar / reativar</text>
+  </g>
+  <g filter="url(#s)">
+    <rect x="55" y="560" width="240" height="64" rx="10" fill="#fff" stroke="#93c5fd"/>
+    <text x="175" y="587" text-anchor="middle" font-size="15" font-weight="700" fill="#0f172a">Buzzer</text>
+    <text x="175" y="608" text-anchor="middle" font-size="12.5" fill="#64748b">alarme sonoro · GPIO4</text>
+  </g>
+  <path d="M55 182 H 40 V 430 H 55" stroke="#475569" stroke-width="2" fill="none" marker-end="url(#a)"/>
+  <path d="M175 296 V 335" stroke="#475569" stroke-width="2" fill="none" marker-end="url(#a)"/>
+  <path d="M175 525 V 560" stroke="#475569" stroke-width="2" fill="none" marker-end="url(#a)"/>
+
+  <!-- broker -->
+  <g filter="url(#s)">
+    <rect x="375" y="190" width="250" height="150" rx="12" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+    <text x="500" y="220" text-anchor="middle" font-size="18" font-weight="700" fill="#4c1d95">Broker MQTT</text>
+    <text x="500" y="243" text-anchor="middle" font-size="13" fill="#5b21b6">broker.emqx.io</text>
+    <text x="500" y="264" text-anchor="middle" font-size="12.5" fill="#334155">:8883 TLS (ESP32 / ponte)</text>
+    <text x="500" y="283" text-anchor="middle" font-size="12.5" fill="#334155">:8084 WebSocket (painel)</text>
+    <text x="500" y="308" text-anchor="middle" font-size="11.5" fill="#6d28d9" font-family="Consolas, monospace">sis1a/g-carlos-7f3a/geladeira1/#</text>
+    <text x="500" y="326" text-anchor="middle" font-size="11" fill="#64748b">telemetria · estado · alerta · cmd · ack</text>
+  </g>
+  <!-- bridge -->
+  <g filter="url(#s)">
+    <rect x="375" y="440" width="250" height="130" rx="12" fill="#fff" stroke="#7c3aed" stroke-width="2"/>
+    <text x="500" y="470" text-anchor="middle" font-size="17" font-weight="700" fill="#4c1d95">Ponte MQTT → HTTP</text>
+    <text x="500" y="492" text-anchor="middle" font-size="12" fill="#64748b" font-family="Consolas, monospace">worker/tools/mqtt-bridge.mjs</text>
+    <text x="500" y="518" text-anchor="middle" font-size="12.5" fill="#334155">roda no seu PC (Node)</text>
+    <text x="500" y="537" text-anchor="middle" font-size="12.5" fill="#334155">necessária: Wokwi não alcança</text>
+    <text x="500" y="556" text-anchor="middle" font-size="12.5" fill="#334155">localhost nem HTTPS externo</text>
+  </g>
+
+  <!-- worker -->
+  <g filter="url(#s)">
+    <rect x="705" y="150" width="360" height="190" rx="12" fill="#ffedd5" stroke="#ea580c" stroke-width="2"/>
+    <text x="885" y="180" text-anchor="middle" font-size="18" font-weight="700" fill="#7c2d12">Cloudflare Worker</text>
+    <text x="885" y="201" text-anchor="middle" font-size="12" fill="#64748b" font-family="Consolas, monospace">worker/src/index.js</text>
+    <text x="885" y="228" text-anchor="middle" font-size="12.5" fill="#334155">POST /api/leituras · /api/eventos  (Bearer INGEST_TOKEN)</text>
+    <text x="885" y="248" text-anchor="middle" font-size="12.5" fill="#334155">GET  /api/ultimo · leituras · resumo · eventos</text>
+    <text x="885" y="268" text-anchor="middle" font-size="12.5" fill="#334155">/api/vacinas  (cadastro, PAINEL_TOKEN)</text>
+    <text x="885" y="288" text-anchor="middle" font-size="12.5" fill="#334155">serve o painel estático (ASSETS)</text>
+    <text x="885" y="318" text-anchor="middle" font-size="12" fill="#9a3412">cron diário 03:00 UTC · retenção 365 dias</text>
+  </g>
+  <g filter="url(#s)">
+    <rect x="705" y="440" width="170" height="130" rx="12" fill="#fff" stroke="#ea580c" stroke-width="2"/>
+    <text x="790" y="470" text-anchor="middle" font-size="17" font-weight="700" fill="#7c2d12">D1 (SQL)</text>
+    <text x="790" y="496" text-anchor="middle" font-size="12.5" fill="#334155">leituras</text>
+    <text x="790" y="515" text-anchor="middle" font-size="12.5" fill="#334155">eventos</text>
+    <text x="790" y="534" text-anchor="middle" font-size="12.5" fill="#334155">vacinas</text>
+    <text x="790" y="556" text-anchor="middle" font-size="11" fill="#64748b">histórico, resumo, CSV</text>
+  </g>
+  <g filter="url(#s)">
+    <rect x="895" y="440" width="170" height="130" rx="12" fill="#fff" stroke="#ea580c" stroke-width="2"/>
+    <text x="980" y="470" text-anchor="middle" font-size="17" font-weight="700" fill="#7c2d12">KV</text>
+    <text x="980" y="496" text-anchor="middle" font-size="12.5" fill="#334155">ESTADO</text>
+    <text x="980" y="515" text-anchor="middle" font-size="12.5" fill="#334155">último estado do</text>
+    <text x="980" y="534" text-anchor="middle" font-size="12.5" fill="#334155">dispositivo</text>
+    <text x="980" y="556" text-anchor="middle" font-size="11" fill="#64748b">leitura rápida</text>
+  </g>
+
+  <!-- painel -->
+  <g filter="url(#s)">
+    <rect x="1140" y="150" width="210" height="190" rx="12" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+    <text x="1245" y="180" text-anchor="middle" font-size="18" font-weight="700" fill="#14532d">Painel web</text>
+    <text x="1245" y="201" text-anchor="middle" font-size="12" fill="#64748b" font-family="Consolas, monospace">painel/ (HTML + JS)</text>
+    <text x="1245" y="228" text-anchor="middle" font-size="12.5" fill="#334155">temperatura em tempo real</text>
+    <text x="1245" y="248" text-anchor="middle" font-size="12.5" fill="#334155">gráfico · resumo · CSV</text>
+    <text x="1245" y="268" text-anchor="middle" font-size="12.5" fill="#334155">histórico de eventos</text>
+    <text x="1245" y="288" text-anchor="middle" font-size="12.5" fill="#334155">aba Vacinas (lotes/validade)</text>
+    <text x="1245" y="318" text-anchor="middle" font-size="12.5" fill="#15803d">botões Silenciar / Reativar</text>
+  </g>
+  <g filter="url(#s)">
+    <rect x="1140" y="440" width="210" height="130" rx="12" fill="#fff" stroke="#16a34a" stroke-width="2"/>
+    <text x="1245" y="480" text-anchor="middle" font-size="17" font-weight="700" fill="#14532d">Operador</text>
+    <text x="1245" y="506" text-anchor="middle" font-size="12.5" fill="#334155">acompanha a faixa 2–8 °C</text>
+    <text x="1245" y="525" text-anchor="middle" font-size="12.5" fill="#334155">recebe o alerta na tela</text>
+    <text x="1245" y="544" text-anchor="middle" font-size="12.5" fill="#334155">silencia o buzzer</text>
+  </g>
+  <path d="M1245 440 V 340" stroke="#16a34a" stroke-width="2" fill="none" marker-end="url(#g)" marker-start="url(#g)"/>
+
+  <!-- arrows: ESP32 -> broker (publish) -->
+  <path d="M295 395 H 335 V 265 H 375" stroke="#2563eb" stroke-width="3" fill="none" marker-end="url(#a)"/>
+  <text x="344" y="395" font-size="12" fill="#1d4ed8" font-weight="700" transform="rotate(-90 344 395)" text-anchor="middle">① publica (MQTT/TLS)</text>
+  <!-- broker -> ESP32 (cmd) -->
+  <path d="M375 305 H 318 V 475 H 295" stroke="#ea580c" stroke-width="2.5" stroke-dasharray="6 4" fill="none" marker-end="url(#o)"/>
+  <!-- broker -> ponte -->
+  <path d="M500 340 V 440" stroke="#475569" stroke-width="3" fill="none" marker-end="url(#a)"/>
+  <text x="512" y="395" font-size="12" font-weight="700" fill="#334155">② assina</text>
+  <!-- ponte -> worker -->
+  <path d="M625 505 H 665 V 300 H 705" stroke="#475569" stroke-width="3" fill="none" marker-end="url(#a)"/>
+  <text x="640" y="470" font-size="12" font-weight="700" fill="#334155" transform="rotate(-90 640 470)">③ HTTP POST</text>
+  <!-- worker -> D1 -->
+  <path d="M810 340 V 440" stroke="#475569" stroke-width="3" fill="none" marker-end="url(#a)"/>
+  <text x="820" y="395" font-size="12" font-weight="700" fill="#334155">④ grava</text>
+  <!-- worker -> KV -->
+  <path d="M960 340 V 440" stroke="#475569" stroke-width="3" fill="none" marker-end="url(#a)"/>
+  <!-- worker -> painel (api + assets) -->
+  <path d="M1065 245 H 1140" stroke="#16a34a" stroke-width="3" fill="none" marker-end="url(#g)"/>
+  <text x="1102" y="236" text-anchor="middle" font-size="11.5" font-weight="700" fill="#15803d">⑤ /api</text>
+  <!-- broker -> painel (websocket, bottom route) -->
+  <path d="M500 570 V 690 H 1245 V 570" stroke="#16a34a" stroke-width="3" fill="none"/>
+  <text x="870" y="684" text-anchor="middle" font-size="12" font-weight="700" fill="#15803d">⑥ WebSocket MQTT (:8084) — tempo real, direto do broker ao navegador, e comandos de volta (Silenciar / Reativar → cmd → ack)</text>
+
+  <!-- legend -->
+  <rect x="30" y="725" width="1340" height="150" rx="14" fill="#fff" stroke="#e2e8f0"/>
+  <text x="55" y="753" font-size="14" font-weight="700" fill="#0f172a">Legenda e observações</text>
+  <line x1="55" y1="775" x2="105" y2="775" stroke="#475569" stroke-width="3" marker-end="url(#a)"/>
+  <text x="115" y="779" font-size="12.5" fill="#334155">fluxo de dados (telemetria, eventos, gravação)</text>
+  <line x1="55" y1="799" x2="105" y2="799" stroke="#ea580c" stroke-width="2.5" stroke-dasharray="6 4" marker-end="url(#o)"/>
+  <text x="115" y="803" font-size="12.5" fill="#334155">comandos do painel → ESP32 (silenciar, reativar) e ack de volta</text>
+  <line x1="55" y1="823" x2="105" y2="823" stroke="#16a34a" stroke-width="3" marker-end="url(#g)"/>
+  <text x="115" y="827" font-size="12.5" fill="#334155">leitura pelo painel (API HTTP e WebSocket)</text>
+  <text x="55" y="857" font-size="12.5" fill="#64748b">Em hardware real o ESP32 também pode enviar direto ao Worker por HTTPS (WORKER_URL); no Wokwi isso fica vazio e a ponte faz o papel.</text>
+
+  <text x="760" y="755" font-size="12.5" fill="#334155" font-weight="700">Fluxo resumido</text>
+  <text x="760" y="776" font-size="12.5" fill="#334155">① ESP32 lê sensores, decide o alarme localmente e publica no broker</text>
+  <text x="760" y="796" font-size="12.5" fill="#334155">②③④ ponte assina o tópico, envia ao Worker, que grava no D1 e guarda o último estado no KV</text>
+  <text x="760" y="816" font-size="12.5" fill="#334155">⑤ painel busca histórico, resumo e CSV pela API do Worker</text>
+  <text x="760" y="836" font-size="12.5" fill="#334155">⑥ painel recebe telemetria ao vivo por WebSocket e envia comandos pelo mesmo canal</text>
+</svg>

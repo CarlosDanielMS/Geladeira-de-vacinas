@@ -6,6 +6,7 @@
 struct Leitura {
   uint32_t up_s;     // segundos desde o boot (convertido para epoch no envio)
   float temp_c;      // NaN se leitura invalida
+  float umid_pct;    // umidade relativa (%), NaN se invalida
   int16_t dist_cm;
   uint8_t estado;    // enum Estado
   uint8_t porta;     // 1 = aberta

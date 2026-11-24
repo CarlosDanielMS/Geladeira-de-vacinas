@@ -32,6 +32,7 @@ class Regra {
       falhas = 0; falhaSensor = false; viuTemp = true;
       excursao(now_ms, temp > T_ALTA,  temp < T_ALTA_OK,  alarmeAlta,  tAlta);
       excursao(now_ms, temp < T_BAIXA, temp > T_BAIXA_OK, alarmeBaixa, tBaixa);
+      if (temp < T_CRITICA) alarmeBaixa = true;   // congelamento: sem atraso (desarma so acima de T_BAIXA_OK)
     }
     // --- porta (histerese 15/20 cm; leitura invalida mantem o ultimo valor) ---
     if (!isnan(dist) && dist > 0) {
@@ -39,7 +40,7 @@ class Regra {
       else if (dist < PORTA_FECHA_CM) portaAberta = false;
     }
     if (portaAberta) {
-      if (tPorta == 0) tPorta = now_ms | 1;
+      if (tPorta == 0) tPorta = marca(now_ms);
       if ((uint32_t)(now_ms - tPorta) >= ATRASO_PORTA_S * 1000UL) alarmePorta = true;
     } else { tPorta = 0; alarmePorta = false; }
 
@@ -54,10 +55,12 @@ class Regra {
  private:
   uint8_t falhas = 0; bool viuTemp = false;
   uint32_t tAlta = 0, tBaixa = 0, tPorta = 0;
+  // Marca de inicio do timer: nunca 0 e NUNCA no futuro (now|1 ficava now+1 e disparava o alarme na hora)
+  static uint32_t marca(uint32_t now) { return now ? now : 1; }
   // fora = fora da faixa agora; dentro = voltou para a faixa com folga (histerese)
   static void excursao(uint32_t now, bool fora, bool dentro, bool& alarme, uint32_t& t0) {
     if (fora) {
-      if (t0 == 0) t0 = now | 1;                         // |1 evita confundir 0 com "sem timer"
+      if (t0 == 0) t0 = marca(now);                      // 0 significa "sem timer"
       if ((uint32_t)(now - t0) >= ATRASO_TEMP_S * 1000UL) alarme = true;
     } else {
       t0 = 0;                                            // voltou: zera o tempo

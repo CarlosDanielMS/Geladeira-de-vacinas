@@ -1,2 +1,6 @@
 # Copie para .dev.vars (esta no .gitignore) para rodar localmente.
 INGEST_TOKEN=troque-por-um-token-longo-e-aleatorio
+# Chave digitada no painel para cadastrar/remover vacinas (producao: wrangler secret put PAINEL_TOKEN)
+PAINEL_TOKEN=troque-por-outra-chave
+# Uso local: 1 = cadastrar vacinas no painel sem chave (NUNCA defina isso na Cloudflare)
+PAINEL_LIVRE=1

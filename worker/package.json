@@ -6,7 +6,10 @@
     "dev": "wrangler dev --local --persist-to .wrangler/state",
     "db:local": "wrangler d1 execute vacinas --local --persist-to .wrangler/state --file=schema.sql",
     "deploy": "wrangler deploy",
-    "test": "node test/smoke.mjs"
+    "test": "node test/smoke.mjs",
+    "ponte": "node tools/mqtt-bridge.mjs",
+    "test:e2e": "node test/e2e-ponte.mjs",
+    "db:migra-umidade:local": "wrangler d1 execute vacinas --local --persist-to .wrangler/state --file=migracao-umidade.sql"
   },
   "devDependencies": {
     "wrangler": "^4"

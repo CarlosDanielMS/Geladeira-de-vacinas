@@ -2,7 +2,7 @@
 // Configuracao NAO secreta. Segredos ficam em secrets.h (fora do Git).
 
 // Identificacao e topicos: sis1a/<grupo>/<local>/{telemetria,estado,comando,alerta,ack}
-#define GRUPO "g01"            // TROCAR pelo codigo do grupo
+#define GRUPO "g-carlos-7f3a"            // TROCAR pelo codigo do grupo
 #define LOCAL "geladeira1"
 #define TOPIC_BASE "sis1a/" GRUPO "/" LOCAL "/"
 
@@ -17,7 +17,8 @@
 #define T_ALTA_OK     7.0f   // histerese: alarme so desliga abaixo disso
 #define T_BAIXA       2.0f
 #define T_BAIXA_OK    3.0f
-#define ATRASO_TEMP_S 300    // 5 min fora da faixa -> alarme (use 30 para demonstrar)
+#define T_CRITICA    -3.0f   // abaixo disso o alarme (buzzer) dispara NA HORA, sem ATRASO_TEMP_S
+#define ATRASO_TEMP_S 30     // DEMO (30 s). Producao: 300 (5 min fora da faixa -> alarme)
 #define PORTA_ABRE_CM 20.0f  // distancia > 20 cm = porta aberta
 #define PORTA_FECHA_CM 15.0f // histerese: < 15 cm = porta fechada
 #define ATRASO_PORTA_S 180   // porta aberta 3 min -> alarme

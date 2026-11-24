@@ -34,13 +34,17 @@
 static SemaphoreHandle_t mtx;
 static Regra regra;
 static Fila<BUFFER_CAP> fila;
-static float g_temp = NAN, g_dist = NAN;
+static float g_temp = NAN, g_dist = NAN, g_umid = NAN;
 static volatile uint32_t g_muteAte = 0;      // millis() ate quando o buzzer fica mudo (0 = nao)
 static volatile uint32_t g_bootEpoch = 0;    // epoch do instante millis()==0 (0 = sem hora)
 
 static DHT dht(PIN_DHT, DHT22);
+#ifndef MQTT_TLS
+#define MQTT_TLS 1                          // 0 = MQTT sem criptografia (so para diagnostico/simulador; porta 1883)
+#endif
 static WiFiClientSecure mqttNet, httpNet;
-static PubSubClient mqtt(mqttNet);
+static WiFiClient mqttPlain;                // usado so quando MQTT_TLS 0
+static PubSubClient mqtt;
 static Preferences prefs;
 static uint64_t ultimoNonce = 0;
 
@@ -98,25 +102,28 @@ void loop() {
   if (primeira || now - tLeitura >= LEITURA_MS) {
     primeira = false; tLeitura = now;
     float t = dht.readTemperature();
+    float u = dht.readHumidity();
     float d = leDistanciaCm();
     xSemaphoreTake(mtx, portMAX_DELAY);
-    g_temp = t; g_dist = d;
+    g_temp = t; g_dist = d; g_umid = u;
     regra.atualiza(now, t, d);
     Estado e = regra.estado;
     bool porta = regra.portaAberta;
     if (primeiroReg || now - tRegistro >= REGISTRO_S * 1000UL) {
       primeiroReg = false; tRegistro = now;
-      fila.push(Leitura{now / 1000, t, (int16_t)(isnan(d) ? -1 : d), (uint8_t)e, (uint8_t)porta});
+      fila.push(Leitura{now / 1000, t, u, (int16_t)(isnan(d) ? -1 : d), (uint8_t)e, (uint8_t)porta});
     }
     xSemaphoreGive(mtx);
-    Serial.printf("T=%.1f C  dist=%.0f cm  estado=%s\n", t, d, nomeEstado(e));
+    Serial.printf("T=%.1f C  UR=%.0f %%  dist=%.0f cm  estado=%s\n", t, u, d, nomeEstado(e));
   }
 
   // buzzer: bipa 500 ms on/off enquanto houver alarme e nao estiver silenciado
   uint32_t mute = g_muteAte;
+  bool alarme = regra.alarme();
   bool mudo = mute != 0 && (int32_t)(mute - now) > 0;
-  if (mute != 0 && !mudo) g_muteAte = 0;
-  buzzer(regra.alarme() && !mudo && ((now / 500) % 2 == 0));
+  // silencio expirou, ou o alarme acabou: o proximo alarme volta a tocar
+  if (mute != 0 && (!mudo || !alarme)) { g_muteAte = 0; mudo = false; }
+  buzzer(alarme && !mudo && ((now / 500) % 2 == 0));
   delay(20);
 }
 
@@ -130,6 +137,7 @@ static void publicaEstado(bool online) {
   d["alarme"] = regra.alarme();
   d["porta_aberta"] = regra.portaAberta;
   if (!isnan(g_temp)) d["temp_c"] = round(g_temp * 10) / 10.0;
+  if (!isnan(g_umid)) d["umid_pct"] = round(g_umid * 10) / 10.0;
   int pend = fila.tamanho();
   xSemaphoreGive(mtx);
   d["silenciado"] = g_muteAte != 0;
@@ -160,6 +168,11 @@ static void aoReceber(char* topic, uint8_t* payload, unsigned int len) {
   if (strcmp(cmd, "silenciar") == 0) {
     int min = d["min"] | 0;
     if (min < 1 || min > SILENCIO_MAX_MIN) { ack(id, cmd, "rejeitado", "min_fora_da_faixa"); return; }
+    xSemaphoreTake(mtx, portMAX_DELAY);
+    bool emAlarme = regra.alarme();
+    xSemaphoreGive(mtx);
+    // sem alarme nao ha o que silenciar; aceitar aqui deixaria o PROXIMO alarme mudo sem ninguem saber
+    if (!emAlarme) { ack(id, cmd, "rejeitado", "sem_alarme_ativo"); return; }
     g_muteAte = (millis() + min * 60000UL) | 1;
   } else if (strcmp(cmd, "reativar") == 0) {
     g_muteAte = 0;
@@ -185,7 +198,10 @@ static void alertas() {
   xSemaphoreTake(mtx, portMAX_DELAY);
   Estado e = regra.estado; float t = g_temp;
   xSemaphoreGive(mtx);
-  if (e == EST_OK || e == EST_INICIANDO) return;
+  if (e == EST_OK || e == EST_INICIANDO) {   // voltou ao normal: o proximo episodio alerta na hora (cooldown so vale dentro do mesmo alarme)
+    for (bool& b : enviou) b = false;
+    return;
+  }
   uint32_t now = millis();
   if (enviou[e] && now - ultimo[e] < COOLDOWN_ALERTA_MS) return;   // cooldown 5 min
   JsonDocument d;
@@ -198,6 +214,7 @@ static void alertas() {
 
 // Envia o buffer em lotes; so remove do buffer depois do HTTP 2xx.
 static void enviaBuffer() {
+  if (WORKER_URL[0] == 0) return;                   // sem URL (ex.: Wokwi + Worker local): a ponte MQTT grava no D1
   if (g_bootEpoch == 0) return;                     // sem hora (NTP) nao ha timestamp confiavel
   static Leitura lote[LOTE_MAX];
   xSemaphoreTake(mtx, portMAX_DELAY);
@@ -212,6 +229,7 @@ static void enviaBuffer() {
     JsonObject o = arr.add<JsonObject>();
     o["ts"] = g_bootEpoch + lote[i].up_s;
     if (!isnan(lote[i].temp_c)) o["temp_c"] = round(lote[i].temp_c * 10) / 10.0;
+    if (!isnan(lote[i].umid_pct)) o["umid_pct"] = round(lote[i].umid_pct * 10) / 10.0;
     if (lote[i].dist_cm >= 0) o["dist_cm"] = lote[i].dist_cm;
     o["porta"] = lote[i].porta;
     o["estado"] = nomeEstado((Estado)lote[i].estado);
@@ -246,7 +264,13 @@ void tarefaRede(void*) {
 #else
   disableCore0WDT();                     // core 2.x
 #endif
+#if MQTT_TLS
   mqttNet.setCACert(CA_MQTT);        // valida o servidor MQTT com a CA raiz
+  mqtt.setClient(mqttNet);
+#else
+  mqtt.setClient(mqttPlain);
+  Serial.println("[rede] ATENCAO: MQTT SEM TLS (MQTT_TLS 0) - so para diagnostico");
+#endif
   httpNet.setCACert(CA_WORKER);      // valida o Worker (sem pular a verificacao)
   httpNet.setTimeout(8);             // segundos: timeout de conexao/TLS do WiFiClientSecure (http.setTimeout() so cobre leitura)
   mqtt.setServer(MQTT_HOST, MQTT_PORT);
@@ -261,13 +285,16 @@ void tarefaRede(void*) {
 
   for (;;) {
     uint32_t now = millis();
+    static bool wifiAvisado = false;
     if (WiFi.status() != WL_CONNECTED) {
+      wifiAvisado = false;
       if (tWifi == 0 || now - tWifi > 10000) {        // tenta de novo a cada 10 s
         tWifi = now; WiFi.begin(WIFI_SSID, WIFI_PASS);
         Serial.println("[rede] conectando ao Wi-Fi...");
       }
       vTaskDelay(500 / portTICK_PERIOD_MS); continue;
     }
+    if (!wifiAvisado) { wifiAvisado = true; Serial.printf("[rede] Wi-Fi conectado (IP %s)\n", WiFi.localIP().toString().c_str()); }
     if (!ntpIniciado) { configTime(0, 0, "pool.ntp.org", "time.google.com"); ntpIniciado = true; }
     if (g_bootEpoch == 0) {
       time_t t = time(nullptr);
@@ -277,7 +304,12 @@ void tarefaRede(void*) {
     if (!mqtt.connected()) {
       if (tMqtt == 0 || now - tMqtt > 5000) {
         tMqtt = now;
-        Serial.println(conectaMqtt() ? "[rede] MQTT conectado (TLS)" : "[rede] MQTT falhou");
+        if (conectaMqtt()) Serial.printf("[rede] MQTT conectado (TLS) em %s:%d, topicos %s#\n", MQTT_HOST, MQTT_PORT, TOPIC_BASE);
+        else {
+          char err[100] = ""; mqttNet.lastError(err, sizeof(err));   // codigo 0050 = NET_CONN_RESET (servidor/rede derrubou o handshake)
+          // estado PubSubClient: -4 timeout, -2 falha TCP/TLS (veja mbedtls), 4 usuario/senha, 5 nao autorizado
+          Serial.printf("[rede] MQTT falhou (estado %d, TLS: %s) - nova tentativa em 5 s\n", mqtt.state(), err[0] ? err : "sem erro");
+        }
       }
     } else {
       mqtt.loop();
@@ -286,12 +318,18 @@ void tarefaRede(void*) {
         JsonDocument d;
         xSemaphoreTake(mtx, portMAX_DELAY);
         if (!isnan(g_temp)) d["temp_c"] = round(g_temp * 10) / 10.0;
+        if (!isnan(g_umid)) d["umid_pct"] = round(g_umid * 10) / 10.0;
         if (!isnan(g_dist)) d["dist_cm"] = round(g_dist);
         xSemaphoreGive(mtx);
-        char buf[96]; size_t n = serializeJson(d, buf);
+        char buf[128]; size_t n = serializeJson(d, buf);
         mqtt.publish(T_TEL, (const uint8_t*)buf, n, false);
       }
-      if (now - tEst >= ESTADO_MS) { tEst = now; publicaEstado(true); }
+      // publica o estado na hora em que ele muda (o painel nao espera ate 30 s) e, fora isso, a cada ESTADO_MS
+      static Estado estadoPublicado = EST_INICIANDO;
+      xSemaphoreTake(mtx, portMAX_DELAY);
+      Estado estadoAtual = regra.estado;
+      xSemaphoreGive(mtx);
+      if (estadoAtual != estadoPublicado || now - tEst >= ESTADO_MS) { estadoPublicado = estadoAtual; tEst = now; publicaEstado(true); }
       alertas();
     }
     if (now - tEnvio >= 10000) { tEnvio = now; enviaBuffer(); }   // reenvio do backlog ao reconectar
